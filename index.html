@@ -182,7 +182,7 @@
 
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(600px, 100%), 1fr));
             gap: 2rem;
             margin-bottom: 3rem;
         }
@@ -358,9 +358,14 @@
             transform: rotate(90deg);
         }
 
-        @media (max-width: 768px) {
+        /* Tablet (up to 1024px) */
+        @media (max-width: 1024px) {
+            body {
+                padding: 1.5rem;
+            }
+
             h1 {
-                font-size: 2rem;
+                font-size: 2.5rem;
             }
 
             .charts-grid {
@@ -368,7 +373,124 @@
             }
 
             .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Mobile (up to 768px) */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+                letter-spacing: 1px;
+            }
+
+            .subtitle {
+                font-size: 0.75rem;
+                letter-spacing: 2px;
+            }
+
+            header {
+                margin-bottom: 1.5rem;
+                padding-bottom: 1.5rem;
+            }
+
+            .controls {
+                padding: 1rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .month-selector {
+                flex-wrap: wrap;
+                gap: 0.75rem;
+            }
+
+            .month-selector label {
+                width: 100%;
+                text-align: center;
+            }
+
+            select {
+                padding: 0.75rem 1rem;
+                font-size: 1rem;
+                flex: 1;
+                min-width: 120px;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .metric-card {
+                padding: 1.25rem;
+            }
+
+            .metric-value {
+                font-size: 1.4rem;
+            }
+
+            .charts-grid {
                 grid-template-columns: 1fr;
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .chart-container {
+                padding: 1.25rem;
+            }
+
+            .chart-title {
+                font-size: 1.1rem;
+                margin-bottom: 1rem;
+            }
+
+            .store-table {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .store-table table {
+                min-width: 500px;
+            }
+
+            .store-table th,
+            .store-table td {
+                padding: 0.75rem 0.5rem;
+                font-size: 0.8rem;
+            }
+
+            .settings-icon {
+                top: 1rem;
+                right: 1rem;
+                font-size: 1.2rem;
+            }
+
+            .password-box {
+                padding: 2rem 1.5rem;
+            }
+        }
+
+        /* Small mobile (up to 480px) */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.4rem;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metric-value {
+                font-size: 1.6rem;
+            }
+
+            select {
+                width: 100%;
             }
         }
 
@@ -537,17 +659,6 @@
             });
         });
 
-        const CACHE_KEY = 'dresslife_data_cache';
-        const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-
-        function initDashboard(data) {
-            monthlyData = data;
-            updateMonthDropdown();
-            const mostRecentMonth = getAllMonthsSorted().slice(-1)[0];
-            if (mostRecentMonth) updateDashboard(mostRecentMonth);
-            document.getElementById('loadingOverlay').style.display = 'none';
-        }
-
         async function loadData(password) {
             const apiURL = localStorage.getItem('dresslife_api_url') || API_URL;
 
@@ -556,31 +667,6 @@
                 return;
             }
 
-            // If we have fresh cached data, show it immediately and refresh in background
-            const cached = localStorage.getItem(CACHE_KEY);
-            if (cached) {
-                try {
-                    const { ts, data } = JSON.parse(cached);
-                    if (Date.now() - ts < CACHE_TTL) {
-                        document.getElementById('passwordModal').style.display = 'none';
-                        initDashboard(data);
-                        // Silently refresh in background
-                        fetch(apiURL + '?password=' + encodeURIComponent(password))
-                            .then(r => r.json())
-                            .then(fresh => {
-                                if (!fresh.error) {
-                                    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: fresh }));
-                                    initDashboard(fresh);
-                                }
-                            }).catch(() => {});
-                        return;
-                    }
-                } catch(e) {
-                    localStorage.removeItem(CACHE_KEY);
-                }
-            }
-
-            // No cache — show loading and wait
             document.getElementById('passwordModal').style.display = 'none';
             document.getElementById('loadingOverlay').style.display = 'flex';
 
@@ -593,17 +679,15 @@
                     document.getElementById('loadingOverlay').style.display = 'none';
                     document.getElementById('passwordModal').style.display = 'flex';
                     document.getElementById('passwordError').textContent = data.message || 'Неверный пароль';
-                    localStorage.removeItem(CACHE_KEY);
                     return;
                 }
 
-                // Cache the fresh data
-                localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
-
                 // Success - load data
                 monthlyData = data;
-
-                initDashboard(data);
+                updateMonthDropdown();
+                const mostRecentMonth = getAllMonthsSorted().slice(-1)[0];
+                if (mostRecentMonth) updateDashboard(mostRecentMonth);
+                document.getElementById('loadingOverlay').style.display = 'none';
                 
             } catch (error) {
                 console.error('Error loading data:', error);
