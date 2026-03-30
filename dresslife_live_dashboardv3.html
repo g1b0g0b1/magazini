@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dresslife - Панель Аналитики</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --luxury-black: #1a1a1a;
+            --luxury-gold: #d4af37;
+            --luxury-cream: #f5f5f0;
+            --luxury-grey: #8a8a8a;
+            --accent-green: #2d5f3f;
+            --accent-red: #8b3a3a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: var(--luxury-cream);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--luxury-gold);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            letter-spacing: 3px;
+            color: var(--luxury-grey);
+            text-transform: uppercase;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .month-selector {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            justify-content: center;
+        }
+
+        .month-selector label {
+            font-weight: 500;
+            color: var(--luxury-gold);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        select {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border: 2px solid var(--luxury-gold);
+            background: var(--luxury-black);
+            color: var(--luxury-cream);
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        select:hover {
+            background: rgba(212, 175, 55, 0.1);
+            transform: translateY(-2px);
+        }
+
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--luxury-gold);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .metric-card:hover::before {
+            opacity: 1;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(212, 175, 55, 0.15);
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: var(--luxury-grey);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--luxury-gold);
+            margin-bottom: 0.5rem;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .metric-change {
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metric-change.positive {
+            color: #4ade80;
+        }
+
+        .metric-change.negative {
+            color: #f87171;
+        }
+
+        .metric-change.neutral {
+            color: var(--luxury-grey);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .chart-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            color: var(--luxury-gold);
+            margin-bottom: 1.5rem;
+            letter-spacing: 1px;
+        }
+
+        .store-table {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .store-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .store-table th {
+            background: rgba(212, 175, 55, 0.1);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--luxury-gold);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        .store-table td {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .store-table tr:hover {
+            background: rgba(212, 175, 55, 0.05);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--luxury-grey);
+            font-style: italic;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 26, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            gap: 2rem;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(212, 175, 55, 0.1);
+            border-top: 4px solid var(--luxury-gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .password-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 26, 0.98);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+        }
+
+        .password-box {
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+            padding: 3rem;
+            border-radius: 12px;
+            border: 2px solid var(--luxury-gold);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .password-box h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--luxury-gold);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-size: 2rem;
+        }
+
+        .password-box input {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            background: var(--luxury-black);
+            border: 2px solid var(--luxury-gold);
+            color: var(--luxury-cream);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .password-box input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+        }
+
+        .password-box button {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            background: var(--luxury-gold);
+            color: var(--luxury-black);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .password-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+        }
+
+        .error-message {
+            color: #f87171;
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .settings-icon {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            cursor: pointer;
+            color: var(--luxury-gold);
+            font-size: 1.5rem;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .settings-icon:hover {
+            transform: rotate(90deg);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .arrow {
+            font-size: 1.2rem;
+        }
+
+        .comparison-period {
+            font-size: 0.75rem;
+            color: var(--luxury-grey);
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Password Modal -->
+    <div id="passwordModal" class="password-modal" style="display: none;">
+        <div class="password-box">
+            <h2>Dresslife</h2>
+            <p style="text-align: center; color: var(--luxury-grey); margin-bottom: 2rem;">Введите пароль для доступа к панели</p>
+            <input type="password" id="passwordInput" placeholder="Пароль" />
+            <button onclick="submitPassword()">Войти</button>
+            <div id="passwordError" class="error-message"></div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div style="color: var(--luxury-gold); font-size: 1.2rem;">Загрузка данных...</div>
+    </div>
+
+    <!-- Settings Icon -->
+    <div class="settings-icon" onclick="showSettings()" title="Изменить URL или пароль">⚙️</div>
+
+    <div class="container">
+        <header>
+            <h1>Dresslife</h1>
+            <div class="subtitle">Аналитика Продаж</div>
+        </header>
+
+        <div class="controls">
+            <div class="month-selector">
+                <label>Выберите период:</label>
+                <select id="monthSelect">
+                    <option value="">Загрузка...</option>
+                </select>
+                <select id="yearSelect">
+                    <option value="">Загрузка...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="metrics-grid" id="metricsGrid">
+            <div class="metric-card">
+                <div class="metric-label">Общая выручка</div>
+                <div class="metric-value" id="totalRevenue">—</div>
+                <div class="metric-change neutral" id="totalChange"></div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">vs Прошлый месяц</div>
+                <div class="metric-value" id="momRevenue">—</div>
+                <div class="metric-change" id="momChange">
+                    <span class="comparison-period">Month-over-Month</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">vs Прошлый год</div>
+                <div class="metric-value" id="yoyRevenue">—</div>
+                <div class="metric-change" id="yoyChange">
+                    <span class="comparison-period">Year-over-Year</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Лучший магазин</div>
+                <div class="metric-value" id="topStore" style="font-size: 1.5rem;">—</div>
+                <div class="metric-change neutral">
+                    <span class="comparison-period" id="topStoreRevenue">—</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-title">Сравнение по магазинам</div>
+                <canvas id="storeComparisonChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Динамика продаж по дням</div>
+                <canvas id="dailyTrendChart"></canvas>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-title">Сравнение с прошлым годом</div>
+                <canvas id="yoyComparisonChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Изменение vs предыдущий месяц</div>
+                <canvas id="momComparisonChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container" style="margin-bottom: 3rem;">
+            <div class="chart-title">Тренд последних 6 месяцев</div>
+            <canvas id="sixMonthTrendChart"></canvas>
+        </div>
+
+        <div class="chart-container store-table">
+            <div class="chart-title" style="padding: 1.5rem 1.5rem 0;">Детализация по магазинам</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Магазин</th>
+                        <th>Выручка</th>
+                        <th>Доля рынка</th>
+                        <th>vs Пред. месяц</th>
+                        <th>vs Прош. год</th>
+                    </tr>
+                </thead>
+                <tbody id="storeTableBody">
+                    <tr><td colspan="5" class="loading">Загрузка данных...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ PASTE YOUR WEB APP URL HERE
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyRehGcotK1hrjy-d6LCw-tlWvbFUVHx1Xbho7Wh3b2Uf_ClJEyluZJjov2sF3qL-G4/exec';
+        
+        let monthlyData = {};
+        let storeChart, trendChart, yoyChart, momChart, sixMonthChart;
+
+        // Always show password modal on page load, and warm up Apps Script in background
+        window.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('passwordModal').style.display = 'flex';
+            // Ping the script with no password to wake it from cold start
+            // while user is typing — response is ignored
+            fetch(API_URL + '?warmup=1').catch(() => {});
+        });
+
+        function submitPassword() {
+            const password = document.getElementById('passwordInput').value;
+            if (!password) {
+                document.getElementById('passwordError').textContent = 'Введите пароль';
+                return;
+            }
+            
+            document.getElementById('passwordError').textContent = '';
+            loadData(password);
+        }
+
+        // Allow Enter key to submit password
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('passwordInput')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    submitPassword();
+                }
+            });
+        });
+
+        const CACHE_KEY = 'dresslife_data_cache';
+        const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+        function initDashboard(data) {
+            monthlyData = data;
+            updateMonthDropdown();
+            const mostRecentMonth = getAllMonthsSorted().slice(-1)[0];
+            if (mostRecentMonth) updateDashboard(mostRecentMonth);
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        async function loadData(password) {
+            const apiURL = localStorage.getItem('dresslife_api_url') || API_URL;
+
+            if (apiURL === 'YOUR_WEB_APP_URL_HERE') {
+                alert('⚠️ Пожалуйста, настройте URL в коде dashboard!\n\nОткройте файл в текстовом редакторе и замените YOUR_WEB_APP_URL_HERE на ваш Web App URL из Google Apps Script.');
+                return;
+            }
+
+            // If we have fresh cached data, show it immediately and refresh in background
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) {
+                try {
+                    const { ts, data } = JSON.parse(cached);
+                    if (Date.now() - ts < CACHE_TTL) {
+                        document.getElementById('passwordModal').style.display = 'none';
+                        initDashboard(data);
+                        // Silently refresh in background
+                        fetch(apiURL + '?password=' + encodeURIComponent(password))
+                            .then(r => r.json())
+                            .then(fresh => {
+                                if (!fresh.error) {
+                                    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: fresh }));
+                                    initDashboard(fresh);
+                                }
+                            }).catch(() => {});
+                        return;
+                    }
+                } catch(e) {
+                    localStorage.removeItem(CACHE_KEY);
+                }
+            }
+
+            // No cache — show loading and wait
+            document.getElementById('passwordModal').style.display = 'none';
+            document.getElementById('loadingOverlay').style.display = 'flex';
+
+            try {
+                const url = apiURL + '?password=' + encodeURIComponent(password);
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.error) {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    document.getElementById('passwordModal').style.display = 'flex';
+                    document.getElementById('passwordError').textContent = data.message || 'Неверный пароль';
+                    localStorage.removeItem(CACHE_KEY);
+                    return;
+                }
+
+                // Cache the fresh data
+                localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+
+                // Success - load data
+                monthlyData = data;
+
+                initDashboard(data);
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('loadingOverlay').style.display = 'none';
+                document.getElementById('passwordModal').style.display = 'flex';
+                document.getElementById('passwordError').textContent = 'Ошибка загрузки данных. Проверьте URL.';
+            }
+        }
+
+        function showSettings() {
+            const newURL = prompt('Введите URL вашего Google Apps Script Web App:', localStorage.getItem('dresslife_api_url') || API_URL);
+            if (newURL && newURL !== API_URL) {
+                localStorage.setItem('dresslife_api_url', newURL);
+            }
+            
+            const resetPassword = confirm('Сбросить пароль? (Потребуется ввести заново)');
+            if (resetPassword) {
+                localStorage.removeItem('dresslife_password');
+                location.reload();
+            }
+        }
+
+        function updateMonthDropdown() {
+            const allMonths = getAllMonthsSorted(); // chronological, earliest first
+
+            // Extract unique years, most recent first
+            const years = [...new Set(allMonths.map(key => {
+                const match = key.match(/(.+?)(\d{2})/);
+                return match ? match[2] : null;
+            }).filter(Boolean))].reverse();
+
+            const yearSelect = document.getElementById('yearSelect');
+            yearSelect.innerHTML = '';
+            years.forEach(yr => {
+                const option = document.createElement('option');
+                option.value = yr;
+                option.textContent = '20' + yr;
+                yearSelect.appendChild(option);
+            });
+
+            // Populate months for the most recent year by default
+            populateMonthsForYear(years[0]);
+
+            yearSelect.addEventListener('change', function() {
+                populateMonthsForYear(this.value);
+                const firstMonth = document.getElementById('monthSelect').value;
+                if (firstMonth) updateDashboard(firstMonth);
+            });
+
+            document.getElementById('monthSelect').addEventListener('change', function(e) {
+                updateDashboard(e.target.value);
+            });
+        }
+
+        function populateMonthsForYear(year2digit) {
+            const monthNames = {
+                'янв': 'Январь', 'февр': 'Февраль', 'март': 'Март',
+                'апр': 'Апрель', 'май': 'Май', 'июнь': 'Июнь',
+                'июль': 'Июль', 'авг': 'Август', 'сент': 'Сентябрь',
+                'окт': 'Октябрь', 'нояб': 'Ноябрь', 'дек': 'Декабрь'
+            };
+
+            // Get months for this year in reverse chronological order (most recent first)
+            const monthsForYear = getAllMonthsSorted()
+                .filter(key => key.match(/(.+?)(\d{2})/) && key.match(/(.+?)(\d{2})/)[2] === year2digit)
+                .reverse();
+
+            const monthSelect = document.getElementById('monthSelect');
+            monthSelect.innerHTML = '';
+            monthsForYear.forEach(key => {
+                const match = key.match(/(.+?)(\d{2})/);
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = match ? (monthNames[match[1]] || match[1]) : key;
+                monthSelect.appendChild(option);
+            });
+        }
+
+        function formatMonthName(monthKey) {
+            const monthNames = {
+                'янв': 'Январь', 'февр': 'Февраль', 'март': 'Март',
+                'апр': 'Апрель', 'май': 'Май', 'июнь': 'Июнь',
+                'июль': 'Июль', 'авг': 'Август', 'сент': 'Сентябрь',
+                'окт': 'Октябрь', 'нояб': 'Ноябрь', 'дек': 'Декабрь'
+            };
+            
+            const match = monthKey.match(/(.+?)(\d{2})/);
+            if (match) {
+                const month = monthNames[match[1]] || match[1];
+                const year = '20' + match[2];
+                return `${month} ${year}`;
+            }
+            return monthKey;
+        }
+
+        const monthOrder = ['янв', 'февр', 'март', 'апр', 'май', 'июнь', 'июль', 'авг', 'сент', 'окт', 'нояб', 'дек'];
+        
+        function getPreviousMonth(monthKey) {
+            const match = monthKey.match(/(.+?)(\d{2})/);
+            if (!match) return null;
+            
+            const month = match[1];
+            const year = match[2];
+            const monthIndex = monthOrder.indexOf(month);
+            
+            if (monthIndex === -1) return null;
+            if (monthIndex === 0) {
+                const prevYear = String(parseInt(year) - 1).padStart(2, '0');
+                return monthOrder[11] + prevYear;
+            }
+            
+            return monthOrder[monthIndex - 1] + year;
+        }
+
+        function getYearAgoMonth(monthKey) {
+            const match = monthKey.match(/(.+?)(\d{2})/);
+            if (!match) return null;
+            
+            const month = match[1];
+            const year = match[2];
+            const prevYear = String(parseInt(year) - 1).padStart(2, '0');
+            
+            return month + prevYear;
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('ru-RU', {
+                style: 'currency',
+                currency: 'RUB',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+
+        function formatPercent(value) {
+            const sign = value >= 0 ? '+' : '';
+            return `${sign}${value.toFixed(1)}%`;
+        }
+
+        function getChangeClass(value) {
+            if (value > 0) return 'positive';
+            if (value < 0) return 'negative';
+            return 'neutral';
+        }
+
+        function updateDashboard(selectedMonth) {
+            const data = monthlyData[selectedMonth];
+            if (!data) return;
+
+            document.getElementById('totalRevenue').textContent = formatCurrency(data.total);
+
+            const prevMonth = getPreviousMonth(selectedMonth);
+            const prevMonthData = monthlyData[prevMonth];
+            
+            if (prevMonthData) {
+                const momChange = ((data.total - prevMonthData.total) / prevMonthData.total) * 100;
+                document.getElementById('momRevenue').textContent = formatCurrency(prevMonthData.total);
+                const momChangeEl = document.getElementById('momChange');
+                momChangeEl.className = 'metric-change ' + getChangeClass(momChange);
+                momChangeEl.innerHTML = `<span class="arrow">${momChange >= 0 ? '↑' : '↓'}</span> ${formatPercent(momChange)}<div class="comparison-period">vs ${formatMonthName(prevMonth)}</div>`;
+            } else {
+                document.getElementById('momRevenue').textContent = '—';
+                document.getElementById('momChange').innerHTML = '<span class="comparison-period">Нет данных</span>';
+            }
+
+            const yearAgo = getYearAgoMonth(selectedMonth);
+            const yearAgoData = monthlyData[yearAgo];
+            
+            if (yearAgoData) {
+                const yoyChange = ((data.total - yearAgoData.total) / yearAgoData.total) * 100;
+                document.getElementById('yoyRevenue').textContent = formatCurrency(yearAgoData.total);
+                const yoyChangeEl = document.getElementById('yoyChange');
+                yoyChangeEl.className = 'metric-change ' + getChangeClass(yoyChange);
+                yoyChangeEl.innerHTML = `<span class="arrow">${yoyChange >= 0 ? '↑' : '↓'}</span> ${formatPercent(yoyChange)}<div class="comparison-period">vs ${formatMonthName(yearAgo)}</div>`;
+            } else {
+                document.getElementById('yoyRevenue').textContent = '—';
+                document.getElementById('yoyChange').innerHTML = '<span class="comparison-period">Нет данных</span>';
+            }
+
+            const stores = Object.entries(data.stores);
+            stores.sort((a, b) => b[1] - a[1]);
+            document.getElementById('topStore').textContent = stores[0][0];
+            document.getElementById('topStoreRevenue').textContent = formatCurrency(stores[0][1]);
+
+            updateStoreChart(data.stores);
+            if (data.daily && data.daily.length > 0) {
+                updateTrendChart(data.daily);
+            }
+            updateStoreTable(data.stores, prevMonthData, yearAgoData);
+            
+            // New comparison charts
+            updateYoYComparisonChart(selectedMonth, data.stores, yearAgoData);
+            updateMoMComparisonChart(data.stores, prevMonthData);
+            updateSixMonthTrendChart(selectedMonth);
+        }
+
+        function updateStoreChart(stores) {
+            const ctx = document.getElementById('storeComparisonChart');
+            
+            if (storeChart) {
+                storeChart.destroy();
+            }
+
+            const labels = Object.keys(stores);
+            const values = Object.values(stores);
+
+            storeChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Выручка',
+                        data: values,
+                        backgroundColor: 'rgba(212, 175, 55, 0.8)',
+                        borderColor: 'rgba(212, 175, 55, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(26, 26, 26, 0.95)',
+                            titleColor: '#d4af37',
+                            bodyColor: '#f5f5f0',
+                            borderColor: '#d4af37',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#8a8a8a',
+                                callback: function(value) {
+                                    return (value / 1000000).toFixed(1) + 'M';
+                                }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        x: {
+                            ticks: { color: '#8a8a8a' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTrendChart(daily) {
+            const ctx = document.getElementById('dailyTrendChart');
+            
+            if (trendChart) {
+                trendChart.destroy();
+            }
+
+            const labels = daily.map((_, i) => i + 1);
+
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Продажи по дням',
+                        data: daily,
+                        borderColor: '#d4af37',
+                        backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#d4af37'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(26, 26, 26, 0.95)',
+                            titleColor: '#d4af37',
+                            bodyColor: '#f5f5f0',
+                            borderColor: '#d4af37',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                title: function(context) {
+                                    return 'День ' + context[0].label;
+                                },
+                                label: function(context) {
+                                    return formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#8a8a8a',
+                                callback: function(value) {
+                                    return (value / 1000).toFixed(0) + 'K';
+                                }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        x: {
+                            ticks: { color: '#8a8a8a' },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateStoreTable(stores, prevMonthData, yearAgoData) {
+            const tbody = document.getElementById('storeTableBody');
+            const total = Object.values(stores).reduce((a, b) => a + b, 0);
+            
+            let html = '';
+            
+            Object.entries(stores).sort((a, b) => b[1] - a[1]).forEach(([store, revenue]) => {
+                const marketShare = (revenue / total) * 100;
+                
+                let momChange = '—';
+                if (prevMonthData && prevMonthData.stores[store]) {
+                    const change = ((revenue - prevMonthData.stores[store]) / prevMonthData.stores[store]) * 100;
+                    const cls = getChangeClass(change);
+                    momChange = `<span class="metric-change ${cls}">${formatPercent(change)}</span>`;
+                }
+                
+                let yoyChange = '—';
+                if (yearAgoData && yearAgoData.stores[store]) {
+                    const change = ((revenue - yearAgoData.stores[store]) / yearAgoData.stores[store]) * 100;
+                    const cls = getChangeClass(change);
+                    yoyChange = `<span class="metric-change ${cls}">${formatPercent(change)}</span>`;
+                }
+                
+                html += `
+                    <tr>
+                        <td><strong>${store}</strong></td>
+                        <td>${formatCurrency(revenue)}</td>
+                        <td>${marketShare.toFixed(1)}%</td>
+                        <td>${momChange}</td>
+                        <td>${yoyChange}</td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        // NEW CHART: Year-over-Year Comparison (Current vs Last Year vs 2 Years Ago)
+        function updateYoYComparisonChart(selectedMonth, currentStores, yearAgoData) {
+            const ctx = document.getElementById('yoyComparisonChart');
+            
+            if (yoyChart) {
+                yoyChart.destroy();
+            }
+
+            // Get 2 years ago data
+            const twoYearsAgo = getTwoYearsAgoMonth(selectedMonth);
+            const twoYearsAgoData = monthlyData[twoYearsAgo];
+
+            const storeNames = Object.keys(currentStores);
+            const currentValues = Object.values(currentStores);
+            const lastYearValues = storeNames.map(store => 
+                yearAgoData && yearAgoData.stores[store] ? yearAgoData.stores[store] : 0
+            );
+            const twoYearsValues = storeNames.map(store =>
+                twoYearsAgoData && twoYearsAgoData.stores[store] ? twoYearsAgoData.stores[store] : 0
+            );
+
+            const datasets = [
+                {
+                    label: formatMonthName(selectedMonth),
+                    data: currentValues,
+                    backgroundColor: 'rgba(212, 175, 55, 0.8)',
+                    borderColor: 'rgba(212, 175, 55, 1)',
+                    borderWidth: 2
+                }
+            ];
+
+            if (yearAgoData) {
+                const yearAgoMonth = getYearAgoMonth(selectedMonth);
+                datasets.push({
+                    label: formatMonthName(yearAgoMonth),
+                    data: lastYearValues,
+                    backgroundColor: 'rgba(138, 138, 138, 0.6)',
+                    borderColor: 'rgba(138, 138, 138, 1)',
+                    borderWidth: 2
+                });
+            }
+
+            if (twoYearsAgoData) {
+                datasets.push({
+                    label: formatMonthName(twoYearsAgo),
+                    data: twoYearsValues,
+                    backgroundColor: 'rgba(138, 138, 138, 0.3)',
+                    borderColor: 'rgba(138, 138, 138, 0.6)',
+                    borderWidth: 2
+                });
+            }
+
+            yoyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: storeNames,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: '#f5f5f0',
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(26, 26, 26, 0.95)',
+                            titleColor: '#d4af37',
+                            bodyColor: '#f5f5f0',
+                            borderColor: '#d4af37',
+                            borderWidth: 1,
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#8a8a8a',
+                                callback: function(value) {
+                                    return (value / 1000000).toFixed(1) + 'M';
+                                }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        x: {
+                            ticks: { color: '#8a8a8a' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // NEW CHART: Month-over-Month Comparison by Store
+        function updateMoMComparisonChart(currentStores, prevMonthData) {
+            const ctx = document.getElementById('momComparisonChart');
+            
+            if (momChart) {
+                momChart.destroy();
+            }
+
+            if (!prevMonthData) {
+                // No previous month data - show message
+                momChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Нет данных'],
+                        datasets: [{
+                            label: 'Нет данных за предыдущий месяц',
+                            data: [0],
+                            backgroundColor: 'rgba(138, 138, 138, 0.3)'
+                        }]
+                    }
+                });
+                return;
+            }
+
+            const storeNames = Object.keys(currentStores);
+            const growthRates = storeNames.map(store => {
+                const current = currentStores[store];
+                const previous = prevMonthData.stores[store] || 0;
+                if (previous === 0) return 0;
+                return ((current - previous) / previous) * 100;
+            });
+
+            // Color based on positive/negative
+            const backgroundColors = growthRates.map(rate => 
+                rate > 0 ? 'rgba(74, 222, 128, 0.7)' : 'rgba(248, 113, 113, 0.7)'
+            );
+            const borderColors = growthRates.map(rate =>
+                rate > 0 ? 'rgba(74, 222, 128, 1)' : 'rgba(248, 113, 113, 1)'
+            );
+
+            momChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: storeNames,
+                    datasets: [{
+                        label: 'Изменение (%)',
+                        data: growthRates,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(26, 26, 26, 0.95)',
+                            titleColor: '#d4af37',
+                            bodyColor: '#f5f5f0',
+                            borderColor: '#d4af37',
+                            borderWidth: 1,
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return formatPercent(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#8a8a8a',
+                                callback: function(value) {
+                                    return value.toFixed(0) + '%';
+                                }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        x: {
+                            ticks: { color: '#8a8a8a' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // NEW CHART: 6-Month Trend
+        function updateSixMonthTrendChart(selectedMonth) {
+            const ctx = document.getElementById('sixMonthTrendChart');
+            
+            if (sixMonthChart) {
+                sixMonthChart.destroy();
+            }
+
+            // Get last 6 months including selected
+            const months = getAllMonthsSorted();
+            const selectedIndex = months.indexOf(selectedMonth);
+            
+            let last6Months = [];
+            if (selectedIndex >= 5) {
+                last6Months = months.slice(selectedIndex - 5, selectedIndex + 1);
+            } else {
+                last6Months = months.slice(0, selectedIndex + 1);
+            }
+
+            const labels = last6Months.map(m => formatMonthName(m));
+            const totals = last6Months.map(m => monthlyData[m] ? monthlyData[m].total : 0);
+
+            sixMonthChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Общая выручка',
+                        data: totals,
+                        borderColor: '#d4af37',
+                        backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#d4af37',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(26, 26, 26, 0.95)',
+                            titleColor: '#d4af37',
+                            bodyColor: '#f5f5f0',
+                            borderColor: '#d4af37',
+                            borderWidth: 1,
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#8a8a8a',
+                                callback: function(value) {
+                                    return (value / 1000000).toFixed(1) + 'M';
+                                }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        x: {
+                            ticks: { color: '#8a8a8a' },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Helper: Get all months sorted chronologically
+        function getAllMonthsSorted() {
+            const months = Object.keys(monthlyData);
+            
+            // Sort by year then month
+            return months.sort((a, b) => {
+                const matchA = a.match(/(.+?)(\d{2})/);
+                const matchB = b.match(/(.+?)(\d{2})/);
+                
+                if (!matchA || !matchB) return 0;
+                
+                const yearA = parseInt(matchA[2]);
+                const yearB = parseInt(matchB[2]);
+                
+                if (yearA !== yearB) return yearA - yearB;
+                
+                const monthIndexA = monthOrder.indexOf(matchA[1]);
+                const monthIndexB = monthOrder.indexOf(matchB[1]);
+                
+                return monthIndexA - monthIndexB;
+            });
+        }
+
+        // Helper: Get month from 2 years ago
+        function getTwoYearsAgoMonth(monthKey) {
+            const match = monthKey.match(/(.+?)(\d{2})/);
+            if (!match) return null;
+            
+            const month = match[1];
+            const year = match[2];
+            const twoYearsAgo = String(parseInt(year) - 2).padStart(2, '0');
+            
+            return month + twoYearsAgo;
+        }
+    </script>
+</body>
+</html>
